@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Проект дома 10×8 — расчёт комнат и газоблоков</title>
+<style>
+  :root {
+    --bg: #f7f4ee;
+    --card: #ffffff;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --accent: #b45309;
+    --accent-2: #1e40af;
+    --line: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #fff;
+    padding: 36px 24px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 8px; font-size: 28px; }
+  header p { margin: 0; opacity: 0.85; }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  section {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.04);
+  }
+  h2 {
+    margin-top: 0;
+    font-size: 22px;
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 15px;
+  }
+  th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+  }
+  th {
+    background: #fafaf7;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tfoot td { font-weight: 700; background: #fdf6e3; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .stat {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid var(--line);
+  }
+  .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat .value { font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--accent-2); }
+  .stat .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .note {
+    background: #fff7ed;
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .formula {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #f3f4f6;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    font-size: 14px;
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    padding: 24px;
+    font-size: 13px;
+  }
+  .plan-svg {
+    width: 100%;
+    max-width: 720px;
+    display: block;
+    margin: 16px auto;
+    background: #fdfbf6;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  @media (max-width: 600px) {
+    header h1 { font-size: 22px; }
+    .stat .value { font-size: 20px; }
+    th, td { padding: 8px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Проект одноэтажного дома 10×8 м</h1>
+  <p>Расчёт размеров комнат и количества газобетонных блоков</p>
+</header>
+
+<div class="container">
+
+  <section>
+    <h2>Исходные данные</h2>
+    <div class="grid">
+      <div class="stat">
+        <div class="label">Габариты дома</div>
+        <div class="value">10 000 × 8 000 мм</div>
+        <div class="sub">Внешние размеры</div>
+      </div>
+      <div class="stat">
+        <div class="label">Толщина стен</div>
+        <div class="value">200 мм</div>
+        <div class="sub">Наружных и внутренних</div>
+      </div>
+      <div class="stat">
+        <div class="label">Высота стен</div>
+        <div class="value">3 000 мм</div>
+        <div class="sub">От пола до потолка</div>
+      </div>
+      <div class="stat">
+        <div class="label">Размер блока</div>
+        <div class="value">200 × 400 × 200</div>
+        <div class="sub">Ширина × Длина × Высота, мм</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Схема планировки</h2>
+    <svg class="plan-svg" viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg">
+      <!-- outer wall -->
+      <rect x="20" y="20" width="960" height="760" fill="#f5ead4" stroke="#3b2e1f" stroke-width="20"/>
+      <!-- internal divisions (approximate) -->
+      <!-- vertical wall between left big block and middle corridor at x=460 -->
+      <line x1="460" y1="30" x2="460" y2="770" stroke="#3b2e1f" stroke-width="20"/>
+      <!-- vertical wall between middle corridor and right rooms at x=640 -->
+      <line x1="640" y1="30" x2="640" y2="770" stroke="#3b2e1f" stroke-width="20"/>
+      <!-- horizontal wall in left zone separating 07 from 06 at y=220 -->
+      <line x1="30" y1="220" x2="450" y2="220" stroke="#3b2e1f" stroke-width="20"/>
+      <!-- horizontal in middle separating 01 from 02 and 02 from 05 -->
+      <line x1="470" y1="220" x2="630" y2="220" stroke="#3b2e1f" stroke-width="20"/>
+      <line x1="470" y1="560" x2="630" y2="560" stroke="#3b2e1f" stroke-width="20"/>
+      <!-- horizontal in right zone separating 03 from 04 at y=400 -->
+      <line x1="650" y1="400" x2="970" y2="400" stroke="#3b2e1f" stroke-width="20"/>
+
+      <!-- room labels -->
+      <g font-family="Arial" font-size="20" fill="#1f2937" text-anchor="middle">
+        <text x="240" y="115"><tspan font-weight="700">07</tspan> Хоз. помещение</text>
+        <text x="240" y="140">2.95 × 2.00 м · 5.9 м²</text>
+
+        <text x="240" y="470"><tspan font-weight="700">06</tspan> Гостиная-кухня</text>
+        <text x="240" y="495">5.95 × 4.00 м · 23.8 м²</text>
+
+        <text x="550" y="115"><tspan font-weight="700">01</tspan> Тамбур</text>
+        <text x="550" y="140">1.85 × 2.70 м · 5.0 м²</text>
+
+        <text x="550" y="390"><tspan font-weight="700">02</tspan> Холл</text>
+        <text x="550" y="415">2.55 × 3.35 м · 8.5 м²</text>
+
+        <text x="550" y="670"><tspan font-weight="700">05</tspan> С/у</text>
+        <text x="550" y="695">1.85 × 2.70 м · 5.0 м²</text>
+
+        <text x="810" y="200"><tspan font-weight="700">03</tspan> Спальня</text>
+        <text x="810" y="225">3.35 × 3.20 м · 10.7 м²</text>
+
+        <text x="810" y="590"><tspan font-weight="700">04</tspan> Спальня</text>
+        <text x="810" y="615">3.35 × 3.20 м · 10.7 м²</text>
+      </g>
+
+      <!-- overall dimensions -->
+      <g font-family="Arial" font-size="18" fill="#6b7280">
+        <text x="500" y="795" text-anchor="middle">10 000 мм</text>
+        <text x="10" y="400" text-anchor="middle" transform="rotate(-90 10 400)">8 000 мм</text>
+      </g>
+    </svg>
+    <div class="note">Схема упрощённая, пропорции приближены к плану. Размеры комнат — внутренние (в чистоте), без учёта стен.</div>
+  </section>
+
+  <section>
+    <h2>Размеры комнат (внутренние)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>Помещение</th>
+          <th>Длина, м</th>
+          <th>Ширина, м</th>
+          <th>Площадь, м²</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>Тамбур</td><td>2.70</td><td>1.85</td><td>5.0</td></tr>
+        <tr><td>02</td><td>Холл</td><td>3.35</td><td>2.55</td><td>8.5</td></tr>
+        <tr><td>03</td><td>Спальня</td><td>3.35</td><td>3.20</td><td>10.7</td></tr>
+        <tr><td>04</td><td>Спальня</td><td>3.35</td><td>3.20</td><td>10.7</td></tr>
+        <tr><td>05</td><td>Санузел</td><td>2.70</td><td>1.85</td><td>5.0</td></tr>
+        <tr><td>06</td><td>Гостиная-кухня</td><td>5.95</td><td>4.00</td><td>23.8</td></tr>
+        <tr><td>07</td><td>Хоз. помещение</td><td>2.95</td><td>2.00</td><td>5.9</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="4">Итого жилая/полезная площадь</td><td>69.6 м²</td></tr>
+      </tfoot>
+    </table>
+    <div class="note">
+      Общая площадь дома по внешнему контуру: <b>10 × 8 = 80 м²</b>. Разница ≈ 10 м² — это площадь, занятая стенами (внешними и внутренними толщиной 200 мм).
+    </div>
+  </section>
+
+  <section>
+    <h2>Расчёт количества газоблоков</h2>
+
+    <h3>Параметры блока 200 × 400 × 200 мм</h3>
+    <div class="grid">
+      <div class="stat">
+        <div class="label">Площадь лицевой грани</div>
+        <div class="value">0.08 м²</div>
+        <div class="sub">0.4 м × 0.2 м (длина × высота)</div>
+      </div>
+      <div class="stat">
+        <div class="label">Блоков в 1 м² кладки</div>
+        <div class="value">12.5 шт</div>
+        <div class="sub">1 ÷ 0.08</div>
+      </div>
+      <div class="stat">
+        <div class="label">Объём одного блока</div>
+        <div class="value">0.016 м³</div>
+        <div class="sub">0.2 × 0.4 × 0.2</div>
+      </div>
+      <div class="stat">
+        <div class="label">Блоков в 1 м³ кладки</div>
+        <div class="value">62.5 шт</div>
+        <div class="sub">1 ÷ 0.016</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:24px;">Наружные стены</h3>
+    <table>
+      <tr><td>Периметр дома</td><td>2 × (10 + 8) = <b>36 м</b></td></tr>
+      <tr><td>Высота стен</td><td>3 м</td></tr>
+      <tr><td>Площадь брутто</td><td>36 × 3 = <b>108 м²</b></td></tr>
+      <tr><td>Проёмы (окна 6 шт × ~1.5 м² + входная дверь ~2 м²)</td><td>≈ 11 м²</td></tr>
+      <tr><td>Площадь чистая</td><td><b>≈ 97 м²</b></td></tr>
+      <tr><td>Количество блоков</td><td>97 × 12.5 = <b>1 213 шт</b></td></tr>
+    </table>
+
+    <h3 style="margin-top:24px;">Внутренние стены (перегородки 200 мм)</h3>
+    <table>
+      <tr><td>Общая длина внутренних стен (по плану)</td><td>≈ 28 м</td></tr>
+      <tr><td>Высота</td><td>3 м</td></tr>
+      <tr><td>Площадь брутто</td><td>28 × 3 = <b>84 м²</b></td></tr>
+      <tr><td>Дверные проёмы (~7 шт × 1.6 м²)</td><td>≈ 11 м²</td></tr>
+      <tr><td>Площадь чистая</td><td><b>≈ 73 м²</b></td></tr>
+      <tr><td>Количество блоков</td><td>73 × 12.5 = <b>913 шт</b></td></tr>
+    </table>
+
+    <h3 style="margin-top:24px;">Итог</h3>
+    <div class="grid">
+      <div class="stat">
+        <div class="label">Наружные стены</div>
+        <div class="value">1 213 шт</div>
+      </div>
+      <div class="stat">
+        <div class="label">Внутренние стены</div>
+        <div class="value">913 шт</div>
+      </div>
+      <div class="stat">
+        <div class="label">Всего без запаса</div>
+        <div class="value">2 126 шт</div>
+      </div>
+      <div class="stat" style="background:#fdf6e3;border-color:#f0c069;">
+        <div class="label">С запасом 5%</div>
+        <div class="value" style="color:var(--accent);">≈ 2 235 шт</div>
+        <div class="sub">≈ 34.0 м³ кладки</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>Формула:</b> <span class="formula">N = (S<sub>стен</sub> − S<sub>проёмов</sub>) × 12.5 × 1.05</span><br/>
+      Запас 5% учитывает подрезку, бой при разгрузке и кладке.
+      Если использовать клей вместо раствора и аккуратную резку — запас можно снизить до 3%.
+    </div>
+  </section>
+
+  <section>
+    <h2>Дополнительные материалы (ориентир)</h2>
+    <table>
+      <tr><th>Материал</th><th>Расчёт</th><th>Итого</th></tr>
+      <tr><td>Клей для газоблоков</td><td>34 м³ × 25 кг/м³</td><td>≈ 850 кг (34 мешка по 25 кг)</td></tr>
+      <tr><td>Арматура (армопояс под перекрытие)</td><td>Периметр + внутр. несущие ≈ 60 м × 4 прутка Ø10</td><td>≈ 240 м арматуры</td></tr>
+      <tr><td>U-блоки/армопояс</td><td>Периметр 36 м ÷ 0.4 м</td><td>≈ 90 шт</td></tr>
+    </table>
+    <div class="note">Это ориентировочные значения. Точные количества зависят от проекта перекрытий, кровли и оконных проёмов.</div>
+  </section>
+
+</div>
+
+<footer>
+  Расчёт выполнен по плану дома 10×8 м · Толщина стен 200 мм · Блок 200×400×200 · Высота 3 м
+</footer>
+</body>
+</html>

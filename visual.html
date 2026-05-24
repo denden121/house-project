@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3D-визуализация · Проект дома 10×8</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #87ceeb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  #canvas { display: block; width: 100vw; height: 100vh; }
+  .ui {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 14px 18px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+    max-width: 280px;
+    z-index: 10;
+  }
+  .ui h1 { font-size: 16px; margin-bottom: 6px; color: #1f2937; }
+  .ui p { font-size: 12px; color: #6b7280; line-height: 1.5; }
+  .ui .hint { margin-top: 8px; font-size: 11px; color: #9ca3af; }
+  .controls {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 95vw;
+  }
+  .controls button {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    color: #1f2937;
+    font-weight: 500;
+    transition: transform 0.1s;
+  }
+  .controls button:hover { transform: translateY(-2px); }
+  .controls button.active { background: #b45309; color: white; }
+  .back {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: rgba(255,255,255,0.92);
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #1f2937;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 10;
+  }
+  @media (max-width: 600px) {
+    .ui { max-width: 200px; padding: 10px 12px; }
+    .ui h1 { font-size: 14px; }
+    .ui p { font-size: 11px; }
+    .controls button { padding: 8px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div class="ui">
+  <h1>🏡 Дом 10×8 м</h1>
+  <p>Вальмовая 4-скатная крыша, уклон 30°. Подвинь мышью / пальцем — крутится.</p>
+  <div class="hint">🖱 ЛКМ — вращать · колесо — зум · ПКМ — панорама</div>
+</div>
+
+<a href="index.html" class="back">← К расчётам</a>
+
+<div class="controls">
+  <button data-view="iso">Изометрия</button>
+  <button data-view="front">Фасад</button>
+  <button data-view="side">Сбоку</button>
+  <button data-view="top">Сверху</button>
+  <button id="day-night">🌞/🌙</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const canvas = document.getElementById('canvas');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 30, 80);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(14, 10, 14);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.target.set(5, 1.5, 4);
+controls.maxPolarAngle = Math.PI / 2 - 0.05;
+controls.minDistance = 5;
+controls.maxDistance = 50;
+
+// ===== Освещение =====
+const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xfff5e0, 1.2);
+sun.position.set(15, 20, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -20;
+sun.shadow.camera.right = 20;
+sun.shadow.camera.top = 20;
+sun.shadow.camera.bottom = -20;
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 50;
+scene.add(sun);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x556b2f, 0.3);
+scene.add(hemi);
+
+// ===== Земля и газон =====
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x6b8e4e, roughness: 0.95 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// дорожка
+const pathMat = new THREE.MeshStandardMaterial({ color: 0xb8a888, roughness: 0.9 });
+const path = new THREE.Mesh(new THREE.PlaneGeometry(2, 6), pathMat);
+path.rotation.x = -Math.PI / 2;
+path.position.set(5, 0.01, -3);
+path.receiveShadow = true;
+scene.add(path);
+
+// ===== Дом =====
+const HOUSE = new THREE.Group();
+const W = 10;   // длина (X)
+const D = 8;    // ширина (Z)
+const H = 3;    // высота стен
+const PITCH = 30 * Math.PI / 180;
+const RISE = (D / 2) * Math.tan(PITCH);  // высота конька над стеной
+const RIDGE_LEN = W - D;                  // длина конька = 2 м
+
+// Стены — белый газобетон
+const wallMat = new THREE.MeshStandardMaterial({ color: 0xefe8d8, roughness: 0.9 });
+const wallBox = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), wallMat);
+wallBox.position.set(W/2, H/2, D/2);
+wallBox.castShadow = true;
+wallBox.receiveShadow = true;
+HOUSE.add(wallBox);
+
+// Цоколь
+const baseMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.95 });
+const base = new THREE.Mesh(new THREE.BoxGeometry(W + 0.4, 0.4, D + 0.4), baseMat);
+base.position.set(W/2, 0.2, D/2);
+base.castShadow = true;
+base.receiveShadow = true;
+HOUSE.add(base);
+
+// ===== Окна (Вариант 2 — комфорт) =====
+const glassMat = new THREE.MeshStandardMaterial({
+  color: 0x4a7fa8,
+  metalness: 0.4,
+  roughness: 0.1,
+  emissive: 0x223344,
+  emissiveIntensity: 0.2
+});
+const frameMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.6 });
+
+function addWindow(x, y, z, w, h, normal) {
+  // normal: 'south'|'north'|'east'|'west'
+  const depth = 0.12;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(w, h, depth), frameMat);
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, h - 0.15, depth - 0.04), glassMat);
+  const grp = new THREE.Group();
+  grp.add(frame);
+  grp.add(glass);
+  if (normal === 'south') {       grp.position.set(x, y, z - 0.05); }
+  else if (normal === 'north') {  grp.position.set(x, y, z + 0.05); }
+  else if (normal === 'east') {   grp.rotation.y = Math.PI / 2; grp.position.set(x + 0.05, y, z); }
+  else if (normal === 'west') {   grp.rotation.y = Math.PI / 2; grp.position.set(x - 0.05, y, z); }
+  HOUSE.add(grp);
+}
+
+const SILL = 0.9;      // подоконник
+const WINH = 1.4;       // высота окон
+const WIN_Y = SILL + WINH/2;
+
+// Гостиная-кухня (06) — 2 окна на южной стене (z=0)
+addWindow(1.5, WIN_Y, 0, 1.5, WINH, 'south');
+addWindow(4.0, WIN_Y, 0, 1.5, WINH, 'south');
+
+// Спальня 04 (нижняя правая) — окно на восточной стене
+addWindow(W, WIN_Y, 2.0, 1.3, WINH, 'east');
+
+// Спальня 03 (верхняя правая) — окно на восточной стене
+addWindow(W, WIN_Y, 5.5, 1.3, WINH, 'east');
+
+// Хоз. помещение (07) — окно на северной стене (по умолчанию убрано пользователем — НЕ добавляем)
+
+// Окошко в с/у (05) — на южной стене небольшое
+addWindow(7.0, 1.7, 0, 0.6, 0.6, 'south');
+
+// Окно в холле (02) — небольшое для освещения коридора (опционально, добавим на северной)
+addWindow(5.5, WIN_Y, D, 1.0, WINH, 'north');
+
+// Окно в спальне 03 — дополнительное на северной стене (двойное освещение)
+addWindow(8.5, WIN_Y, D, 1.0, WINH, 'north');
+
+// ===== Дверь =====
+const doorMat = new THREE.MeshStandardMaterial({ color: 0x6b3410, roughness: 0.7 });
+const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.1, 0.15), doorMat);
+doorFrame.position.set(5.0, 1.05, D + 0.02);
+doorFrame.castShadow = true;
+HOUSE.add(doorFrame);
+
+// ручка
+const handleMat = new THREE.MeshStandardMaterial({ color: 0xc9a55c, metalness: 0.9, roughness: 0.2 });
+const handle = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), handleMat);
+handle.position.set(4.65, 1.05, D + 0.10);
+HOUSE.add(handle);
+
+// ===== Вальмовая 4-скатная крыша =====
+const roofMat = new THREE.MeshStandardMaterial({ color: 0x7a2a1f, roughness: 0.8, side: THREE.DoubleSide });
+const eaveOverhang = 0.5;
+const eaveDrop = 0.05;
+const eaveY = H - eaveDrop;
+
+// углы свеса
+const e1 = new THREE.Vector3(-eaveOverhang,         eaveY, -eaveOverhang);
+const e2 = new THREE.Vector3(W + eaveOverhang,      eaveY, -eaveOverhang);
+const e3 = new THREE.Vector3(W + eaveOverhang,      eaveY,  D + eaveOverhang);
+const e4 = new THREE.Vector3(-eaveOverhang,         eaveY,  D + eaveOverhang);
+
+// концы конька
+const apexY = H + RISE;
+const apex1 = new THREE.Vector3((W - RIDGE_LEN) / 2, apexY, D / 2);
+const apex2 = new THREE.Vector3((W + RIDGE_LEN) / 2, apexY, D / 2);
+
+function makeFace(points) {
+  const geo = new THREE.BufferGeometry();
+  const verts = [];
+  // триангуляция простым fan-методом от points[0]
+  for (let i = 1; i < points.length - 1; i++) {
+    verts.push(points[0].x, points[0].y, points[0].z);
+    verts.push(points[i].x, points[i].y, points[i].z);
+    verts.push(points[i+1].x, points[i+1].y, points[i+1].z);
+  }
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, roofMat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+// 4 грани крыши
+HOUSE.add(makeFace([e1, e2, apex2, apex1]));   // южная трапеция (z=0)
+HOUSE.add(makeFace([e3, e4, apex1, apex2]));   // северная трапеция (z=D)
+HOUSE.add(makeFace([e2, e3, apex2]));          // восточная вальма (x=W)
+HOUSE.add(makeFace([e4, e1, apex1]));          // западная вальма (x=0)
+
+// Конёк (декоративная балка)
+const ridgeMat = new THREE.MeshStandardMaterial({ color: 0x5a1f17, roughness: 0.7 });
+const ridge = new THREE.Mesh(new THREE.BoxGeometry(RIDGE_LEN, 0.08, 0.12), ridgeMat);
+ridge.position.set(W/2, apexY + 0.04, D/2);
+ridge.castShadow = true;
+HOUSE.add(ridge);
+
+// ===== Труба =====
+const chimneyMat = new THREE.MeshStandardMaterial({ color: 0xa0392f, roughness: 0.85 });
+const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.2, 0.5), chimneyMat);
+chimney.position.set(W/2 - 1.5, apexY + 0.2, D/2 + 0.5);
+chimney.castShadow = true;
+HOUSE.add(chimney);
+
+const chimneyTop = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.6), baseMat);
+chimneyTop.position.set(W/2 - 1.5, apexY + 0.85, D/2 + 0.5);
+chimneyTop.castShadow = true;
+HOUSE.add(chimneyTop);
+
+scene.add(HOUSE);
+
+// ===== Деревья =====
+function makeTree(x, z, scale = 1) {
+  const tree = new THREE.Group();
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a1e, roughness: 0.9 });
+  const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2f5a2c, roughness: 0.9 });
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 1.5, 8), trunkMat);
+  trunk.position.y = 0.75;
+  trunk.castShadow = true;
+  const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.0, 2.5, 8), leavesMat);
+  leaves.position.y = 2.5;
+  leaves.castShadow = true;
+  tree.add(trunk);
+  tree.add(leaves);
+  tree.position.set(x, 0, z);
+  tree.scale.setScalar(scale);
+  scene.add(tree);
+}
+makeTree(-3, 2, 1.1);
+makeTree(-4, 6, 0.9);
+makeTree(13, 1, 1.0);
+makeTree(13.5, 7, 1.2);
+makeTree(-2, -2, 0.8);
+makeTree(12, 11, 1.0);
+
+// кустики
+function makeBush(x, z) {
+  const bushMat = new THREE.MeshStandardMaterial({ color: 0x3a6b35, roughness: 0.95 });
+  const bush = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), bushMat);
+  bush.position.set(x, 0.4, z);
+  bush.castShadow = true;
+  scene.add(bush);
+}
+makeBush(2, -1);
+makeBush(8, -1);
+makeBush(3, D + 1.2);
+makeBush(7, D + 1.2);
+
+// ===== Камеры / виды =====
+const views = {
+  iso:   { pos: [16, 11, 16],  target: [5, 1.5, 4] },
+  front: { pos: [5, 4, -14],   target: [5, 2, 4] },
+  side:  { pos: [22, 4, 4],    target: [5, 2, 4] },
+  top:   { pos: [5, 22, 4.01], target: [5, 0, 4] }
+};
+
+function setView(name) {
+  const v = views[name];
+  if (!v) return;
+  camera.position.set(...v.pos);
+  controls.target.set(...v.target);
+  controls.update();
+  document.querySelectorAll('.controls button[data-view]').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === name);
+  });
+}
+
+document.querySelectorAll('.controls button[data-view]').forEach(b => {
+  b.addEventListener('click', () => setView(b.dataset.view));
+});
+setView('iso');
+
+// ===== День/ночь =====
+let isNight = false;
+document.getElementById('day-night').addEventListener('click', () => {
+  isNight = !isNight;
+  if (isNight) {
+    scene.background = new THREE.Color(0x0a1a2e);
+    scene.fog.color.set(0x0a1a2e);
+    ambient.intensity = 0.15;
+    sun.intensity = 0.25;
+    sun.color.set(0x6080ff);
+    glassMat.emissiveIntensity = 1.8;
+    glassMat.emissive.set(0xfff0a0);
+  } else {
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog.color.set(0x87ceeb);
+    ambient.intensity = 0.5;
+    sun.intensity = 1.2;
+    sun.color.set(0xfff5e0);
+    glassMat.emissiveIntensity = 0.2;
+    glassMat.emissive.set(0x223344);
+  }
+});
+
+// ===== Resize =====
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ===== Render loop =====
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
